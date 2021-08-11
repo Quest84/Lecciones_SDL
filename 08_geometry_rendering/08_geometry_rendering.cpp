@@ -21,25 +21,29 @@ void close();
 bool init() {
     // Inicializar la bandera
     bool success = true;
-
-    // Crea la ventana
-    gWindow = SDL_CreateWindow( "SDL Tutorial - 08 Geometry Rendering", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-    if ( gWindow == NULL ) {
-        printf( "No se pudo crear la ventana! SDL Error: %s\n", SDL_GetError() );
+    
+    if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
+        printf( "SDL no pudo inicializarse! SDL Error: %s\n", SDL_GetError() );
         success = false;
     } else {
-        // Crea el render para la ventana
-        gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
-        if( gRenderer == NULL ) {
-            printf( "No se pudo crear el renderer! SDL Error: %s\n", SDL_GetError() );
+        // Crea la ventana
+        gWindow = SDL_CreateWindow( "SDL Tutorial - 08 Geometry Rendering", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+                SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+        if ( gWindow == NULL ) {
+            printf( "No se pudo crear la ventana! SDL Error: %s\n", SDL_GetError() );
             success = false;
         } else {
-            // Inicializa el renderizador de color
-            SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+            // Crea el render para la ventana
+            gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
+            if( gRenderer == NULL ) {
+                printf( "No se pudo crear el renderer! SDL Error: %s\n", SDL_GetError() );
+                success = false;
+            } else {
+                // Inicializa el renderizador de color
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+            }
         }
     }
-
     return success;
 }
 
