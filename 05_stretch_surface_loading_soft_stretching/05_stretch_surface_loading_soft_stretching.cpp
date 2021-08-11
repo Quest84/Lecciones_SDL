@@ -2,7 +2,7 @@
 #include<string>
 #include<SDL2/SDL.h>
 
-const int SCREEN_WIDTH = 1000;
+const int SCREEN_WIDTH = 750;
 const int SCREEN_HEIGHT = 750;
 
 //Constantes de las teclas presionadas
@@ -30,11 +30,6 @@ SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
 
 SDL_Surface* gStretchedSurface = NULL;
-// las imagenes que corresponden a la tecla presionada
-SDL_Surface* gKeyPressSurfaces[ KEY_PRESS_SURFACE_TOTAL ];
-
-// Imagen actualmente mostrada
-SDL_Surface* gCurrentSurface = NULL;
 
 SDL_Surface* loadSurface( std::string path ) {
 	// La imagen final optimizada
@@ -59,7 +54,6 @@ SDL_Surface* loadSurface( std::string path ) {
 }
 
 bool init() {
-	// Inicializa la bandera
 	bool success = true;
 
 	if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
@@ -86,9 +80,9 @@ bool loadMedia() {
 	bool success = true;
 
 	// Carga la superficie por defecto
-	gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] = loadSurface( "stretch.bmp" );
-	if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] == NULL ) {
-		printf( "Falló en cargar la imagen por defecto!\n" );
+    gStretchedSurface = loadSurface( "stretch.bmp" );
+	if( gStretchedSurface == NULL ) {
+		printf( "Falló en cargar la imagen!\n" );
 		success = false;
 	}
 
@@ -98,12 +92,9 @@ bool loadMedia() {
 
 void close() {
 	// Deallocate surfaces
-	
-	for( int i = 0; i < KEY_PRESS_SURFACE_TOTAL; i++ ) {
-		SDL_FreeSurface( gKeyPressSurfaces[ i ] );
-		gKeyPressSurfaces[ i ] = NULL;
-	}
-
+	SDL_FreeSurface( gStretchedSurface );
+    gStretchedSurface = NULL;
+    
 	// Destruye la ventana
 	SDL_DestroyWindow( gWindow );
 	gWindow = NULL;
@@ -130,9 +121,6 @@ int main(int argc, char* argv[]) {
 	// Manejador de eventos
 	SDL_Event e;
 
-	// Ppone la superficie por defecto
-	gStretchedSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
-
 	// Mientras la aplicacion esté funcionando
 	while( !quit ) {
 		// Maneja los eventos en la cola
@@ -153,7 +141,6 @@ int main(int argc, char* argv[]) {
 							break;	
 
 						default:
-							gStretchedSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
 							break;
 					}
 
@@ -174,7 +161,8 @@ int main(int argc, char* argv[]) {
 		// Actualiza la superficie
 		SDL_UpdateWindowSurface( gWindow );
 	}
-
+    
+    // Libera los recursos y termina SDL
 	close();
 
 }
