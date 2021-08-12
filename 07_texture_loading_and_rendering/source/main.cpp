@@ -32,26 +32,30 @@ bool init() {
     // Inicializar la bandera
     bool success = true;
 
-    // Crea la ventana
-    gWindow = SDL_CreateWindow( "SDL Tutorial 07 - Carga y render de textura", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-    if ( gWindow == NULL ) {
-        printf( "No se pudo crear la ventana! SDL Error: %s\n", SDL_GetError() );
+    if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
+        printf( "SDL no pudo inicializarse! SDL Error: %s\n", SDL_GetError() );
         success = false;
     } else {
-        // Crea el render para la ventana
-        gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
-        if( gRenderer == NULL ) {
-            printf( "No se pudo crear el renderer! SDL Error: %s\n", SDL_GetError() );
+        // Crea la ventana
+        gWindow = SDL_CreateWindow( "SDL Tutorial 07 - Carga y render de textura", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+                SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+        if ( gWindow == NULL ) {
+            printf( "No se pudo crear la ventana! SDL Error: %s\n", SDL_GetError() );
             success = false;
         } else {
-            // Inicializa el renderizador de color
-            SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-
-            // Inicializa la carga de PNG
-            int imgFlags = IMG_INIT_PNG;
-            if( !( IMG_Init( imgFlags ) & imgFlags ) ) {
-                printf( "SDL Image no se pudo inicializar! SDL_image Error: %s\n", IMG_GetError() );
+            // Crea el render para la ventana
+            gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
+            if( gRenderer == NULL ) {
+                printf( "No se pudo crear el renderer! SDL Error: %s\n", SDL_GetError() );
+                success = false;
+            } else {
+                // Inicializa el renderizador de color
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                // Inicializa la carga de PNG
+                int imgFlags = IMG_INIT_PNG;
+                if( !( IMG_Init( imgFlags ) & imgFlags ) ) {
+                    printf( "SDL Image no se pudo inicializar! SDL_image Error: %s\n", IMG_GetError() );
+                }      
             }
         }
     }
@@ -86,7 +90,7 @@ bool loadMedia() {
     bool success = true;
 
     // Carga la texture PNG
-    gTexture = loadTexture( "image.png" );
+    gTexture = loadTexture( "romfs/image.png" );
     if( gTexture == NULL ) {
         printf( "Falló al cargar la imagen de la textura\n" );
         success = false;

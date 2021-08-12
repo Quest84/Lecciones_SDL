@@ -70,7 +70,7 @@ bool loadMedia() {
     bool success = true;
 
     // Carga la textura
-    gTexture = loadTexture( "viewport.png" );
+    gTexture = loadTexture( "romfs/viewport.png" );
     if( gTexture == NULL ) {
         printf( "Falló la carga de la imagen!\n" );
         success = false;

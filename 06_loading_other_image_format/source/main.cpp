@@ -88,7 +88,7 @@ bool loadMedia() {
 	bool success = true;
 
 	// Carga la superficie por defecto
-    gStretchedSurface = loadSurface( "image.png" );
+    gStretchedSurface = loadSurface( "romfs/image.png" );
 	if( gStretchedSurface == NULL ) {
 		printf( "Falló en cargar la imagen!\n" );
 		success = false;

@@ -55,7 +55,7 @@ bool loadMedia() {
 	bool success = true;
 
 	//Carga la imagen splash
-	gXOut = SDL_LoadBMP( "floppa.bmp" );
+	gXOut = SDL_LoadBMP( "romfs/floppa.bmp" );
 	if( gXOut == NULL ) {
 		printf( "No se pudo cargar la imagen %s! SDL Error: %s\n", "floppa.bmp", SDL_GetError() );
 		success = false;
