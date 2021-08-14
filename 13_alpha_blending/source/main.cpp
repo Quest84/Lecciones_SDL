@@ -20,6 +20,12 @@ class LTexture {
         
         // Establece la modulación de color
         void setColor( Uint8 red, Uint8 green, Uint8 blue );
+        
+        // Set Blending 
+        void setBlendMode( SDL_BlendMode blending );
+
+        // Set alpha modulation
+        void setAlpha( Uint8 alpha );
 
         // Libera la textura
         void free();
@@ -63,6 +69,7 @@ SDL_Renderer* gRenderer = NULL;
 
 // Texturas de la Escena
 LTexture gModulatedTexture;
+LTexture gBackgroundTexture;
 
 LTexture::LTexture() {
     // Inicializa la textura
@@ -122,6 +129,16 @@ void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue ) {
     SDL_SetTextureColorMod( mTexture, red, green, blue );
 }
 
+void LTexture::setBlendMode( SDL_BlendMode blending ) {
+    // Set Blending function
+    SDL_SetTextureBlendMode( mTexture, blending );
+}
+
+void LTexture::setAlpha( Uint8 alpha ) {
+    // Modula la textura alpha
+    SDL_SetTextureAlphaMod( mTexture, alpha );
+}
+
 void LTexture::free() {
     // Libera la textura si existe
     if( mTexture != NULL ) {
@@ -177,7 +194,7 @@ bool init() {
         }
 
         // Crea la ventana
-        gWindow = SDL_CreateWindow( "SDL Tutorial 12 - Color Modulation", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        gWindow = SDL_CreateWindow( "SDL Tutorial 13 - Alpha Modulation", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                 SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if( gWindow == NULL ) {
             printf( "No se pudo iniciar la ventana! SDL Error: %s\n", SDL_GetError() );
@@ -210,11 +227,21 @@ bool loadMedia() {
     // Bandera
     bool success = true;
     
-    // Carga la textura de la hoja de sprites
-    if( !gModulatedTexture.loadFromFile( "romfs/colors.png" ) ) {
+    // Carga la textura alpha
+    if( !gModulatedTexture.loadFromFile( "romfs/fadeout.png" ) ) {
         printf( "Falló la carga de la textura!\n" );
         success = false;
+    } else {
+        // Set standart alpha blending
+        gModulatedTexture.setBlendMode( SDL_BLENDMODE_BLEND );
     }
+
+    // Carga la textura de fondo
+    if( !gBackgroundTexture.loadFromFile( "romfs/fadein.png" ) ) {
+        printf( "Falló la carga de la textura de fondo!\n" );
+        success = false;
+    }
+
     return success;
 }
 
@@ -249,9 +276,11 @@ int main( int argc, char* argv[] ) {
 
     SDL_Event e;
 
+    // Modulación de componentes
     Uint8 r = 255;
     Uint8 g = 255;
     Uint8 b = 255;
+    Uint8 a = 255;
 
     while( !quit ) {
         while( SDL_PollEvent( &e ) != 0 ) {
@@ -267,25 +296,21 @@ int main( int argc, char* argv[] ) {
                               printf( "Bye!\n" );
                               quit = true;
                               break;
-
-                          case SDLK_a:
-                              r += 32;
+                    
+                          case SDLK_w:
+                              if ( a + 32 > 255 ) {
+                                  a = 255;
+                              } else {
+                                  a += 32;
+                              }
+                            
                               break;
                           case SDLK_s:
-                              g += 32;
-                              break;
-                          case SDLK_d:
-                              b += 32;
-                              break;
-
-                          case SDLK_z:
-                              r -= 32;
-                              break;
-                          case SDLK_x:
-                              g -= 32;
-                              break;
-                          case SDLK_c:
-                              b -= 32;
+                              if ( a - 32 < 0 ) {
+                                  a = 0;
+                              } else {
+                                  a -= 32;
+                              }
                               break;
                       }
             }
@@ -296,8 +321,11 @@ int main( int argc, char* argv[] ) {
         SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_RenderClear( gRenderer );
         
+        // Carga la textura de fondo
+        gBackgroundTexture.render( 0, 0 );
+
         // Modulación y render de la texura
-        gModulatedTexture.setColor( r, g, b );
+        gModulatedTexture.setAlpha( a );
         gModulatedTexture.render( 0, 0 );
 
         // Render bottom left sprite

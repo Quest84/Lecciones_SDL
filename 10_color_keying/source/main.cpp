@@ -162,7 +162,7 @@ bool init() {
         }
 
         // Crea la ventana
-        gWindow = SDL_CreateWindow( "SDL Tutorial 09 - Color Keying", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        gWindow = SDL_CreateWindow( "SDL Tutorial 10 - Color Keying", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                 SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if( gWindow == NULL ) {
             printf( "No se pudo iniciar la ventana! SDL Error: %s\n", SDL_GetError() );

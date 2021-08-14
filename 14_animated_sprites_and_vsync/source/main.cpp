@@ -6,6 +6,7 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+
 // Texture weapper class
 class LTexture {
     public:
@@ -20,6 +21,12 @@ class LTexture {
         
         // Establece la modulación de color
         void setColor( Uint8 red, Uint8 green, Uint8 blue );
+        
+        // Set Blending 
+        void setBlendMode( SDL_BlendMode blending );
+
+        // Set alpha modulation
+        void setAlpha( Uint8 alpha );
 
         // Libera la textura
         void free();
@@ -63,6 +70,12 @@ SDL_Renderer* gRenderer = NULL;
 
 // Texturas de la Escena
 LTexture gModulatedTexture;
+LTexture gBackgroundTexture;
+
+// Animación de caminar
+const int WALKING_ANIMATION_FRAMES = 4;
+SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
+LTexture gSpriteSheetTexture;
 
 LTexture::LTexture() {
     // Inicializa la textura
@@ -122,6 +135,16 @@ void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue ) {
     SDL_SetTextureColorMod( mTexture, red, green, blue );
 }
 
+void LTexture::setBlendMode( SDL_BlendMode blending ) {
+    // Set Blending function
+    SDL_SetTextureBlendMode( mTexture, blending );
+}
+
+void LTexture::setAlpha( Uint8 alpha ) {
+    // Modula la textura alpha
+    SDL_SetTextureAlphaMod( mTexture, alpha );
+}
+
 void LTexture::free() {
     // Libera la textura si existe
     if( mTexture != NULL ) {
@@ -177,14 +200,15 @@ bool init() {
         }
 
         // Crea la ventana
-        gWindow = SDL_CreateWindow( "SDL Tutorial 12 - Color Modulation", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        gWindow = SDL_CreateWindow( "SDL Tutorial 14 - Animated sprite and vsync", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                 SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if( gWindow == NULL ) {
             printf( "No se pudo iniciar la ventana! SDL Error: %s\n", SDL_GetError() );
             success = false;
         } else {
             // Crea el renderizador
-            gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
+            gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED 
+                    | SDL_RENDERER_PRESENTVSYNC );
             if( gRenderer == NULL ) {
                 printf( "No se pudo crear el renderizador! SDL Error: %s\n", SDL_GetError() );
                 success = false;
@@ -210,11 +234,34 @@ bool loadMedia() {
     // Bandera
     bool success = true;
     
-    // Carga la textura de la hoja de sprites
-    if( !gModulatedTexture.loadFromFile( "romfs/colors.png" ) ) {
-        printf( "Falló la carga de la textura!\n" );
+    // Carga la textura alpha
+    if( !gSpriteSheetTexture.loadFromFile( "romfs/foo.png" ) ) {
+        printf( "Falló la carga de la textura de caminata!\n" );
         success = false;
+    } else {
+        // Establece los cortes para los sprites
+        gSpriteClips[ 0 ].x =   0;
+        gSpriteClips[ 0 ].y =   0;
+        gSpriteClips[ 0 ].w =  64;
+        gSpriteClips[ 0 ].h = 205;
+
+        gSpriteClips[ 1 ].x =  64;
+        gSpriteClips[ 1 ].y =   0;
+        gSpriteClips[ 1 ].w =  64;
+        gSpriteClips[ 1 ].h = 205;
+        
+        gSpriteClips[ 2 ].x = 128;
+        gSpriteClips[ 2 ].y =   0;
+        gSpriteClips[ 2 ].w =  64;
+        gSpriteClips[ 2 ].h = 205;
+        
+        gSpriteClips[ 3 ].x = 196;
+        gSpriteClips[ 3 ].y =   0;
+        gSpriteClips[ 3 ].w =  64;
+        gSpriteClips[ 3 ].h = 205;
     }
+
+
     return success;
 }
 
@@ -247,11 +294,9 @@ int main( int argc, char* argv[] ) {
 
     bool quit = false;
 
-    SDL_Event e;
+    SDL_Event e; 
 
-    Uint8 r = 255;
-    Uint8 g = 255;
-    Uint8 b = 255;
+    int frame = 0;
 
     while( !quit ) {
         while( SDL_PollEvent( &e ) != 0 ) {
@@ -267,25 +312,11 @@ int main( int argc, char* argv[] ) {
                               printf( "Bye!\n" );
                               quit = true;
                               break;
-
-                          case SDLK_a:
-                              r += 32;
+                    
+                          case SDLK_w:
+                            
                               break;
                           case SDLK_s:
-                              g += 32;
-                              break;
-                          case SDLK_d:
-                              b += 32;
-                              break;
-
-                          case SDLK_z:
-                              r -= 32;
-                              break;
-                          case SDLK_x:
-                              g -= 32;
-                              break;
-                          case SDLK_c:
-                              b -= 32;
                               break;
                       }
             }
@@ -296,12 +327,19 @@ int main( int argc, char* argv[] ) {
         SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_RenderClear( gRenderer );
         
-        // Modulación y render de la texura
-        gModulatedTexture.setColor( r, g, b );
-        gModulatedTexture.render( 0, 0 );
+        // Renderiza el frame actual
+        SDL_Rect* currentClip = &gSpriteClips[ frame / 4 ];
+        gSpriteSheetTexture.render( ( SCREEN_WIDTH - currentClip->w ) / 2, 
+                ( SCREEN_HEIGHT - currentClip->h ) / 2, currentClip );
 
-        // Render bottom left sprite
         SDL_RenderPresent( gRenderer );
+
+        // Avanza al siguiente frame
+        ++frame;
+
+        // Ciclo de animación
+        if( frame / 4 >= WALKING_ANIMATION_FRAMES )
+            frame = 0;
     }
     
     close();
