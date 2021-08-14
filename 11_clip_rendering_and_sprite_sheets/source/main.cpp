@@ -25,7 +25,7 @@ class LTexture {
         int y;
 
         // Renderiza la textura en un punto dado
-        void render( int x, int y );
+        void render( int x, int y, SDL_Rect* clip = NULL );
     
         // Obtiene las dimensiones de la imagen
         int getWidth();
@@ -59,8 +59,8 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 
 // Texturas de la Escena
-LTexture gFooTexture;
-LTexture gBackgroundTexture;
+LTexture gSpriteSheetTexture;
+SDL_Rect gSpriteClips[ 4 ];
 
 LTexture::LTexture() {
     // Inicializa la textura
@@ -116,7 +116,7 @@ bool LTexture::loadFromFile( std::string path ) {
 }
 
 void LTexture::free() {
-    // Livera la textura si existe
+    // Libera la textura si existe
     if( mTexture != NULL ) {
         SDL_DestroyTexture( mTexture );
         mTexture = NULL;
@@ -125,10 +125,18 @@ void LTexture::free() {
     }
 }
 
-void LTexture::render( int x, int y ) {
+void LTexture::render( int x, int y, SDL_Rect* clip ) {
     // Espacio para renderizar y el render en pantalla
     SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-    SDL_RenderCopy( gRenderer, mTexture, NULL, &renderQuad );
+
+    // Establece las dimensiones del clip rendering
+    if( clip != NULL ) {
+        renderQuad.w = clip->w;
+        renderQuad.h = clip->h;
+    }
+    // Render to screen
+    SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
+
 }
 
 int LTexture::getWidth() {
@@ -194,26 +202,43 @@ bool init() {
 bool loadMedia() {
     // Bandera
     bool success = true;
-
-    // Carga la textura foo.png
-    if( !gFooTexture.loadFromFile( "romfs/foo.png" ) ) {
-        printf( "Falló en cargar la textura foo!\n" );
+    
+    // Carga la textura de la hoja de sprites
+    if( !gSpriteSheetTexture.loadFromFile( "romfs/dots.png" ) ) { 
+        printf( "Falló la carga de la textura de la hoja de sprites!\n" );
         success = false;
-    }
+    } else {
+        // Sprite top left
+        gSpriteClips[ 0 ].x =   0;
+        gSpriteClips[ 0 ].y =   0;
+        gSpriteClips[ 0 ].w = 100;
+        gSpriteClips[ 0 ].h = 100;
 
-    // Carga la textura del fondo
-    if( !gBackgroundTexture.loadFromFile( "romfs/background.png" ) ) {
-        printf( "Falló en cargar la textura del fondo!\n" );
-        success = false;
+        // Sprite top right;
+        gSpriteClips[ 1 ].x = 100;
+        gSpriteClips[ 1 ].y =   0;
+        gSpriteClips[ 1 ].w = 100;
+        gSpriteClips[ 1 ].h = 100;
+
+        // Sprite bottom left
+        gSpriteClips[ 2 ].x =   0;
+        gSpriteClips[ 2 ].y = 100;
+        gSpriteClips[ 2 ].w = 100;
+        gSpriteClips[ 2 ].h = 100;
+
+        // Sprite botoom right
+        gSpriteClips[ 3 ].x = 100;
+        gSpriteClips[ 3 ].y = 100;
+        gSpriteClips[ 3 ].w = 100;
+        gSpriteClips[ 3 ].h = 100;
     }
 
     return success;
 }
 
 void close() {
-    // Libera las texturas cargadas
-    gFooTexture.free();
-    gBackgroundTexture.free();
+    // Libera la textura cargada
+    gSpriteSheetTexture.free();
 
     // Destruye la ventana
     SDL_DestroyRenderer( gRenderer );
@@ -258,30 +283,14 @@ int main( int argc, char* argv[] ) {
                               break;
 
                           case SDLK_UP:
-                              gFooTexture.y -= 10;
-                              if ( gFooTexture.y < 0) {
-                                  gFooTexture.y = 0;
-                              }
                               break;
                           case SDLK_DOWN:
-                              gFooTexture.y += 10;
-                              if ( ( gFooTexture.y + gFooTexture.getHeight() ) > SCREEN_HEIGHT ){
-                                  gFooTexture.y = SCREEN_HEIGHT - gFooTexture.getHeight();
-                              }
                               break;
 
                           case SDLK_LEFT:
-                              gFooTexture.x -= 10;
-                              if ( gFooTexture.x < 0 ) {
-                                  gFooTexture.x = 0;
-                              }
                               break;
 
                           case SDLK_RIGHT:
-                              gFooTexture.x += 10;
-                              if( (gFooTexture.x + gFooTexture.getWidth() ) > SCREEN_WIDTH ) {
-                                  gFooTexture.x = SCREEN_WIDTH - gFooTexture.getWidth();
-                              }
                               break;
                       }
             }
@@ -289,16 +298,20 @@ int main( int argc, char* argv[] ) {
         }
 
         // Limpia la pantalla
-        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+        SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
         SDL_RenderClear( gRenderer );
+        
+        // Render top left sprite
+        gSpriteSheetTexture.render( 0, 0, &gSpriteClips[ 0 ] );
 
-        // Renderiza la textura de fondo
-        gBackgroundTexture.setHeight( SCREEN_HEIGHT );
-        gBackgroundTexture.setWidth( SCREEN_WIDTH );
-        gBackgroundTexture.render( 0, 0 );
+        // Render top right sprite
+        gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 1 ].w, 0, &gSpriteClips[ 1 ] );
 
-        // Renderiza la textura foo
-        gFooTexture.render( gFooTexture.x, gFooTexture.y );
+        // Render bottom left sprite
+        gSpriteSheetTexture.render( 0, SCREEN_HEIGHT - gSpriteClips[ 2 ].h, &gSpriteClips[ 2 ] );
+
+        // Render bottom right sprite
+        gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 0 ] );
 
         // actualiza la pantalla
         SDL_RenderPresent( gRenderer );
