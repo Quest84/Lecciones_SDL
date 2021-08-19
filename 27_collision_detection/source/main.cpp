@@ -103,7 +103,7 @@ class Dot
         void handleEvent( SDL_Event &event );
 
         // Mueve el punto
-        void move();
+        void move( SDL_Rect &wall );
 
         // Muestra el punto en la pantalla
         void render();
@@ -114,6 +114,9 @@ class Dot
 
         // La velocidad del punto
         int mVelX, mVelY;
+
+        // Caja de colisión del punto
+        SDL_Rect mCollider;
 };
 
 // Inicia SDL y crea la ventana
@@ -125,14 +128,14 @@ bool loadMedia();
 // Libera la memoria y termina SDL
 void close();
 
+// Detector de cajas de colisiones
+bool checkCollision( SDL_Rect a, SDL_Rect b );
+
 // Ventana donde se renderizará
 SDL_Window* gWindow = NULL;
 
 // Ventana del renderizado
 SDL_Renderer* gRenderer = NULL;
-
-// Fuente usada globalmente
-TTF_Font *gFont = NULL;
 
 // Textura
 LTexture gDotTexture;
@@ -190,6 +193,7 @@ bool LTexture::loadFromFile( std::string path ) {
     return mTexture != NULL;
 }
 
+#if defined(SDL_TTF_MAJOR_VERSION)
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor ) {
     // Manejar la textura existente
     free();
@@ -218,6 +222,7 @@ bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColo
     // Devuelve la textura
     return mTexture != NULL;
 }
+#endif
 
 void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue ) {
     // Textura modulada
@@ -382,6 +387,10 @@ Dot::Dot()
     mPosX = 0;
     mPosY = 0;
 
+    // Establece las dimensiones de la caja de colision
+    mCollider.w = DOT_WIDTH;
+    mCollider.h = DOT_HEIGHT;
+
     // Inicaliza la velocidad
     mVelX = 0;
     mVelY = 0;
@@ -414,24 +423,28 @@ void Dot::handleEvent( SDL_Event &event )
     }
 }
 
-void Dot::move()
+void Dot::move( SDL_Rect &wall )
 {
     // Mueve el punto a la izquierda
     mPosX += mVelX;
+    mCollider.x = mPosX;
 
     // Si el punto fue muy lejos a la izquierda o derecha
-    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
+    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH || checkCollision(mCollider, wall)) )
     {
         mPosX -= mVelX;
+        mCollider.x = mPosX;
     }
 
     mPosY += mVelY;
+    mCollider.y = mPosY;
 
     // Si el punto fue muy arriba o abajo
-    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
+    if( (mPosY < 0) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT) || checkCollision(mCollider, wall) )
     {
         // Lo mueve de vuelta
         mPosY -= mVelY;
+        mCollider.y = mPosY;
     }
     
 }
@@ -457,7 +470,7 @@ bool init() {
         }
 
         // Crea la ventana
-        gWindow = SDL_CreateWindow( "SDL Tutorial 26 - Motion", 
+        gWindow = SDL_CreateWindow( "SDL Tutorial 27 - Collision Detection", 
                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                 SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if( gWindow == NULL ) {
@@ -519,6 +532,43 @@ void close() {
     SDL_Quit();
 }
 
+bool checkCollision( SDL_Rect a, SDL_Rect b )
+{
+    // Lados del rectangulo
+    int leftA, leftB;
+    int rightA, rightB;
+    int topA, topB;
+    int bottomA, bottomB;
+
+    // Calcula los lados del rect A
+    leftA = a.x;
+    rightA = a.x + a.w;
+    topA = a.y;
+    bottomA = a.y + a.h;
+
+    // Calcula los lados del rect B
+    leftB = b.x;
+    rightB = b.x + b.w;
+    topB = b.y;
+    bottomB = b.y + b.h;
+
+    // Si alguno de los lados desde A está fuera de B
+    if( bottomA <= topB )
+        return false;
+
+    if( topA >= bottomB )
+        return false;
+
+    if( rightA <= leftB )
+        return false;
+
+    if( leftA >= rightB )
+        return false;
+
+    // Si ninguno de los lados desde A está fuera de B
+    return true;
+}
+
 int main( int argc, char* argv[] ) {
     // Inicia SDL y crea la ventana
     if( !init() ) {
@@ -536,6 +586,13 @@ int main( int argc, char* argv[] ) {
     SDL_Event e;
 
     Dot dot;
+
+    // Establece el muro
+    SDL_Rect wall;
+    wall.x = 300;
+    wall.y = 40;
+    wall.w = 40;
+    wall.h = 400;
 
     while( !quit ) {
         while( SDL_PollEvent( &e ) != 0 ) {
@@ -559,13 +616,17 @@ int main( int argc, char* argv[] ) {
 
         }
         
-        dot.move();
+        dot.move( wall );
 
         // Limpia la pantalla
         SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_RenderClear( gRenderer );
 
-        // Renderiza el objeto
+        // Renderiza el muro
+        SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
+        SDL_RenderDrawRect( gRenderer, &wall );
+
+        // Renderiza el punto
         dot.render();
 
         // Actualiza la pantalla

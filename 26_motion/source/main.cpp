@@ -131,9 +131,6 @@ SDL_Window* gWindow = NULL;
 // Ventana del renderizado
 SDL_Renderer* gRenderer = NULL;
 
-// Fuente usada globalmente
-TTF_Font *gFont = NULL;
-
 // Textura
 LTexture gDotTexture;
 
@@ -190,6 +187,7 @@ bool LTexture::loadFromFile( std::string path ) {
     return mTexture != NULL;
 }
 
+#if defined(SDL_TTF_MAJOR_VERSION)
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor ) {
     // Manejar la textura existente
     free();
@@ -218,6 +216,7 @@ bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColo
     // Devuelve la textura
     return mTexture != NULL;
 }
+#endif
 
 void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue ) {
     // Textura modulada
