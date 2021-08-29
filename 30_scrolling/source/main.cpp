@@ -10,8 +10,8 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 // Constantes del nivel
-const int LEVEL_WIDTH = 1920;
-const int LEVEL_HEIGHT = 2382;
+const int LEVEL_WIDTH = 2189;
+const int LEVEL_HEIGHT = 1657;
 
 // Texture weapper class
 class LTexture {
@@ -285,8 +285,6 @@ void Dot::handleEvent( SDL_Event &event )
             case SDLK_RIGHT: mVelX += DOT_VEL; break;
             case SDLK_SPACE:
                 printf( "X = %i\nY = %i\n", getPosX(), getPosY() );
-                if( mVelY )
-                    mVelY -= DOT_VEL;
         }
     }
     // Si la tecla ha sido liberada
@@ -500,7 +498,6 @@ int main( int argc, char* argv[] ) {
         SDL_RenderClear( gRenderer );
 
         gBGTexture.render( 0, 0, &camera );
-
 
         // Renderiza objetos
         dot.render( camera.x, camera.y );
