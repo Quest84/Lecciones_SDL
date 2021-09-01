@@ -9,10 +9,6 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-// Constantes del nivel
-const int LEVEL_WIDTH = 1689;
-const int LEVEL_HEIGHT = 1257;
-
 // Texture weapper class
 class LTexture {
     public:
@@ -85,14 +81,7 @@ class Dot
         void move();
 
         // Muestra el punto en la pantalla
-        void render( int camX, int camY );
-
-        // Obtiene las cajas de colisiones
-        int getPosX();
-        int getPosY();
-
-        void setPosX( int x );
-        void setPosY( int y );
+        void render();
 
     private:
         // Los Offset X y Y del punto
@@ -283,8 +272,6 @@ void Dot::handleEvent( SDL_Event &event )
             case SDLK_DOWN: mVelY += DOT_VEL; break;
             case SDLK_LEFT: mVelX -= DOT_VEL; break;
             case SDLK_RIGHT: mVelX += DOT_VEL; break;
-            case SDLK_SPACE:
-                printf( "X = %i\nY = %i\n", getPosX(), getPosY() );
         }
     }
     // Si la tecla ha sido liberada
@@ -306,7 +293,7 @@ void Dot::move()
     mPosX += mVelX;
     
     // Si el punto se aleja a la izquierda o derecha
-    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > LEVEL_WIDTH ) )
+    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
     {
         // Moverlo de vuelta
         mPosX -= mVelX;
@@ -314,38 +301,17 @@ void Dot::move()
 
     // Arriba o abajo
     mPosY += mVelY;
-    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > LEVEL_HEIGHT ) )
+    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
     {
         mPosY -= mVelY;
     }
 }
 
-void Dot::render(int camX, int camY )
+void Dot::render()
 {
     // Muestra el punto relativo a la camara
-    gDotTexture.render( mPosX - camX, mPosY - camY );
+    gDotTexture.render( mPosX, mPosY );
 }
-
-int Dot::getPosX()
-{
-    return mPosX;
-}
-
-int Dot::getPosY()
-{
-    return mPosY;
-}
-
-void Dot::setPosX( int x )
-{
-    mPosX = x; 
-}
-
-void Dot::setPosY( int y )
-{
-    mPosY = y;
-}
-    
 
 bool init() {
     // Bandera
@@ -362,7 +328,7 @@ bool init() {
         }
 
         // Crea la ventana
-        gWindow = SDL_CreateWindow( "SDL Tutorial 30 - Scrolling", 
+        gWindow = SDL_CreateWindow( "SDL Tutorial 31 - Scrolling Background", 
                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                 SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if( gWindow == NULL ) {
@@ -448,7 +414,7 @@ int main( int argc, char* argv[] ) {
     Dot dot;
 
     // Area de la camara
-    SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+    int scrollingOffset = 0;
 
     while( !quit ) {
         while( SDL_PollEvent( &e ) != 0 ) {
@@ -475,32 +441,18 @@ int main( int argc, char* argv[] ) {
         // Mueve el punto y revisa la colision
         dot.move();
 
-        // Centro de la camara sobre el punto
-        // Suave
-        camera.x += ( dot.getPosX() - camera.x - 300 ) / 20;
-        camera.y += ( dot.getPosY() - camera.y - 200 ) / 20;
-        // Fija
-        // camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
-        // camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
+        --scrollingOffset;
+        if( scrollingOffset < - gBGTexture.getWidth() )
+            scrollingOffset = 0;
 
-        // Mantener la camara en los limites
-        if( camera.x < 0 )
-            camera.x = 0;
-        if( camera.y < 0 )
-            camera.y = 0;
-        if( camera.x > LEVEL_WIDTH - camera.w )
-            camera.x = LEVEL_WIDTH - camera.w;
-        if( camera.y > LEVEL_HEIGHT - camera.h )
-            camera.y = LEVEL_HEIGHT - camera.h;
-
-        // Limpia la pantalla
         SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_RenderClear( gRenderer );
 
-        gBGTexture.render( 0, 0, &camera );
+        gBGTexture.render( scrollingOffset, 0 );
+        gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
 
         // Renderiza objetos
-        dot.render( camera.x, camera.y );
+        dot.render();
 
         // Actualiza la pantalla
         SDL_RenderPresent( gRenderer );
