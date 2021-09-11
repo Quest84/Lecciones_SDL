@@ -16,10 +16,12 @@ ALLCPPSOBJ	:= $(patsubst %.cpp,%.o,$(ALLCPPS))
 SUBDIRS		:= $(shell find $(SRC) -type d)
 OBJSUBDIRS 	:= $(patsubst $(SRC)%,$(OBJ)%,$(SUBDIRS))
 
+OBJSTRUEDIR	:= $(patsubst $(SRC)%,$(OBJ)%,$(ALLCPPSOBJ) $(ALLCSOBJ))
+
 .PHONY: dir
 
 $(APP) : $(OBJSUBDIRS) $(ALLCPPSOBJ) $(ALLCPPSOBJ)
-	$(CC) -o $(APP) $(patsubst $(SRC)%,$(OBJ)%,$(ALLCPPSOBJ) $(ALLCSOBJ)) $(LIBS)
+	$(CC) -o $(APP) $(OBJSTRUEDIR) $(LIBS)
 
 %.o : %.c
 	$(C) -o $(patsubst $(SRC)%,$(OBJ)%,$@) -c $^ $(CFLAGS)
@@ -35,6 +37,10 @@ dir:
 	$(info $(ALLCSOBJ))
 	$(info $(ALLCPPS))
 	$(info $(ALLCPPSOBJ))
+
+clean:
+	rm $(APP)
+	rm -r $(OBJSTRUEDIR)
 
 $(OBJSUBDIRS):
 	$(MKDIR) $(OBJSUBDIRS)
