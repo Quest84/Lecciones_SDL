@@ -424,6 +424,7 @@ void pixelManipulation( LTexture& texture, Uint8 oldColor[], Uint8 newColor[] )
     else
     {
         Uint32 format = SDL_GetWindowPixelFormat( gWindow );
+ 
         SDL_PixelFormat* mappingFormat = SDL_AllocFormat( format );
 
         Uint32* pixels = ( Uint32* )texture.getPixels();
@@ -510,18 +511,9 @@ int main( int argc, char* argv[] ) {
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
                 SDL_RenderClear( gRenderer );
 
+
                 pixelManipulation( gFooTexture, oldColor, newColor );
                 
-                /*
-                newColor[0] += 10;
-
-                for( int i = 0; i < 3; i++ )
-                {
-                    if( newColor[i] > 255 )
-                        newColor[ i ] = 0;
-                }
-                */
-
                 // Renderiza la textura
                 gFooTexture.render( ( SCREEN_WIDTH -gFooTexture.getWidth() ) / 2,
                         ( SCREEN_HEIGHT - gFooTexture.getHeight() ) / 2 );
