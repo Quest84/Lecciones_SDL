@@ -35,7 +35,7 @@ class LTexture {
         int y;
     
         // Renderiza la textura en un punto dado
-        void render( int x, int y, SDL_Rect* clip = NULL );
+        void render( int x, int y, SDL_Rect* clip = NULL, int scale=1 );
     
         // Obtiene las dimensiones de la imagen
         int getWidth();
@@ -73,7 +73,7 @@ LTexture gModulatedTexture;
 LTexture gBackgroundTexture;
 
 // Animación de caminar
-const int WALKING_ANIMATION_FRAMES = 4;
+const int WALKING_ANIMATION_FRAMES = 98;
 SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
 LTexture gSpriteSheetTexture;
 
@@ -155,14 +155,14 @@ void LTexture::free() {
     }
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip ) {
+void LTexture::render( int x, int y, SDL_Rect* clip, int scale ) {
     // Espacio para renderizar y el render en pantalla
     SDL_Rect renderQuad = { x, y, mWidth, mHeight };
 
     // Establece las dimensiones del clip rendering
     if( clip != NULL ) {
-        renderQuad.w = clip->w;
-        renderQuad.h = clip->h;
+        renderQuad.w = clip->w * scale;
+        renderQuad.h = clip->h * scale;
     }
     // Render to screen
     SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
@@ -235,11 +235,20 @@ bool loadMedia() {
     bool success = true;
     
     // Carga la textura alpha
-    if( !gSpriteSheetTexture.loadFromFile( "romfs/foo.png" ) ) {
+    if( !gSpriteSheetTexture.loadFromFile( "romfs/sheet2.png" ) ) {
         printf( "Falló la carga de la textura de caminata!\n" );
         success = false;
     } else {
         // Establece los cortes para los sprites
+        for( int i = 0; i < 98; i++ )
+        {
+            gSpriteClips[ i ].x = i * 160;
+            gSpriteClips[ i ].y = 0;
+            gSpriteClips[ i ].w = 160;
+            gSpriteClips[ i ].h = 160;
+        }
+        
+        /*
         gSpriteClips[ 0 ].x =   0;
         gSpriteClips[ 0 ].y =   0;
         gSpriteClips[ 0 ].w =  64;
@@ -259,6 +268,7 @@ bool loadMedia() {
         gSpriteClips[ 3 ].y =   0;
         gSpriteClips[ 3 ].w =  64;
         gSpriteClips[ 3 ].h = 205;
+        */
     }
 
 
@@ -329,8 +339,7 @@ int main( int argc, char* argv[] ) {
         
         // Renderiza el frame actual
         SDL_Rect* currentClip = &gSpriteClips[ frame / 4 ];
-        gSpriteSheetTexture.render( ( SCREEN_WIDTH - currentClip->w ) / 2, 
-                ( SCREEN_HEIGHT - currentClip->h ) / 2, currentClip );
+        gSpriteSheetTexture.render( 0, 0, currentClip, 4 );
 
         SDL_RenderPresent( gRenderer );
 

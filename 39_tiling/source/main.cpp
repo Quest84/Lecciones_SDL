@@ -367,10 +367,10 @@ void Dot::handleEvent( SDL_Event &event )
         // Ajusta la velocidad
         switch( event.key.keysym.sym )
         {
-            case SDLK_UP: mVelY -= DOT_VEL; break;
-            case SDLK_DOWN: mVelY += DOT_VEL; break;
-            case SDLK_LEFT: mVelX -= DOT_VEL; break;
-            case SDLK_RIGHT: mVelX += DOT_VEL; break;
+            case SDLK_UP: case SDLK_w: mVelY -= DOT_VEL; break;
+            case SDLK_DOWN: case SDLK_s: mVelY += DOT_VEL; break;
+            case SDLK_LEFT: case SDLK_a: mVelX -= DOT_VEL; break;
+            case SDLK_RIGHT: case SDLK_d: mVelX += DOT_VEL; break;
         }
     }
     // Si la tecla ha sido liberada
@@ -378,10 +378,10 @@ void Dot::handleEvent( SDL_Event &event )
     {
         switch( event.key.keysym.sym )
         {
-            case SDLK_UP: mVelY += DOT_VEL; break;
-            case SDLK_DOWN: mVelY -= DOT_VEL; break;
-            case SDLK_LEFT: mVelX += DOT_VEL; break;
-            case SDLK_RIGHT: mVelX -= DOT_VEL; break;
+            case SDLK_UP: case SDLK_w: mVelY += DOT_VEL; break;
+            case SDLK_DOWN: case SDLK_s: mVelY -= DOT_VEL; break;
+            case SDLK_LEFT: case SDLK_a: mVelX += DOT_VEL; break;
+            case SDLK_RIGHT: case SDLK_d: mVelX -= DOT_VEL; break;
         }
     }
 }

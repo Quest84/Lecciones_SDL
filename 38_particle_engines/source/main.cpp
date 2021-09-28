@@ -8,7 +8,100 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 // Cuenta de particulas
-const int TOTAL_PARTICLES = 15;
+const int TOTAL_PARTICLES = 30;
+const int NUM_STARS       = 200;
+
+SDL_Surface* mySurface = NULL;
+SDL_Renderer* myRenderer = NULL;
+SDL_Texture* myTexture = NULL;
+typedef struct Star
+{
+    int x, y, speed;
+} Star;
+
+Star stars[ NUM_STARS ];
+
+int getStarColor( int );
+
+void resetStars()
+{
+    for( int i = 0; i < NUM_STARS; ++i )
+    {
+        stars[ i ].x = rand()% SCREEN_WIDTH;
+        stars[ i ].y = rand()% SCREEN_HEIGHT;
+        stars[ i ].speed = 1 + ( rand()%12 );
+    }
+}
+
+void doStars()
+{
+    for( int i = 0; i < NUM_STARS; ++i )
+    {
+        stars[ i ].x -= stars[ i ].speed;
+        if( stars[ i ].x < 0 )
+        {
+            stars[ i ].x = SCREEN_WIDTH;
+            stars[ i ].y = rand()% SCREEN_HEIGHT;
+            stars[ i ].speed = 1 + ( rand()% 12 );
+        }
+    }
+}
+
+void updateStars()
+{
+    SDL_Rect rect;
+
+    for( int i = 0; i < NUM_STARS; ++i )
+    {
+        if( stars[ i ].x < SCREEN_WIDTH )
+        {
+            rect.x = stars[ i ].x;
+            rect.y = stars[ i ].y;
+            rect.w = 2;
+            rect.h = 2;
+
+            SDL_FillRect( mySurface, &rect, getStarColor( stars[ i ].speed ) );
+        }
+    }
+}
+
+int getStarColor( int speed )
+{
+    SDL_Color color;
+    switch(speed)
+    {
+        case 1: case 2: case 3:
+            color.r = 159;
+            color.b = 159;
+            color.g = 159;
+            break;
+        case 4: case 5: case 6:
+            color.r = 191;
+            color.b = 191;
+            color.g = 191;
+            break;
+        default:
+            color.r = 255;
+            color.b = 255;
+            color.g = 255;
+            break;
+    }
+    return SDL_MapRGB( mySurface->format, color.r, color.g, color.b );
+}
+
+void delay( unsigned int frameLimit )
+{
+    unsigned int ticks = SDL_GetTicks();
+
+    if( frameLimit < ticks )
+    {
+        return;
+    }
+    if( frameLimit > ticks + 16 )
+        SDL_Delay( 16 );
+    else
+        SDL_Delay( frameLimit - ticks );
+}
 
 // Texture weapper class
 class LTexture {
@@ -41,7 +134,7 @@ class LTexture {
     
         // Renderiza la textura en un punto dado
         void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, 
-                SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+                SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, int scale = 1 );
     
         // Obtiene las dimensiones de la imagen
         int getWidth();
@@ -92,8 +185,8 @@ class Dot
 {
     public:
         // Dimensiones del punto
-        static const int DOT_WIDTH = 20;
-        static const int DOT_HEIGHT = 20;
+        static const int DOT_WIDTH = 52;
+        static const int DOT_HEIGHT = 60;
 
         // Maximá eje de velocidad de la particula
         static const int DOT_VEL = 10;
@@ -112,6 +205,19 @@ class Dot
 
         // Muestra el punto en la pantalla
         void render();
+
+        int getPosX();
+        int getPosY();
+
+        void setPosX( int x );
+        void setPosY( int y );
+        
+        int getVelX();
+        int getVelY();
+
+        void setVelX( int x );
+        void setVelY( int y );
+
 
     private:
         // Particulas
@@ -148,6 +254,9 @@ LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
+LTexture gFishyTexture;
+LTexture gSpriteSheetTexture;
+SDL_Rect gSpriteClips[ 97 ];
 
 LTexture::LTexture() {
     // Inicializa la textura
@@ -256,14 +365,14 @@ void LTexture::free() {
     }
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip ) {
+void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip, int scale ) {
     // Espacio para renderizar y el render en pantalla
-    SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+    SDL_Rect renderQuad = { x, y, mWidth*scale, mHeight*scale };
 
     // Establece las dimensiones del clip rendering
     if( clip != NULL ) {
-        renderQuad.w = clip->w;
-        renderQuad.h = clip->h;
+        renderQuad.w = clip->w * scale;
+        renderQuad.h = clip->h * scale;
     }
     // Render to screen, similar a RenderCopy pero con argumentos extra para girar y rotar
     SDL_RenderCopyEx( gRenderer, mTexture, clip, &renderQuad, angle, center, flip );
@@ -290,7 +399,7 @@ Particle::Particle( int x, int y )
 {
     // Establece los offsets
     mPosX = x - 10 + ( rand() % 25 );
-    mPosY = y + 5 + ( rand() % 25 );
+    mPosY = y + 25 + ( rand() % 25 );
 
     // Inicializa la animación
     mFrame = rand() % 5;
@@ -432,6 +541,48 @@ void Dot::renderParticles()
     }
 }
 
+int Dot::getPosX()                                                                               
+{                                                                                                
+    return mPosX;                                                                                
+}                                                                                                
+                                                                                                 
+int Dot::getPosY()                                                                               
+{                                                                                                
+    return mPosY;                                                                                
+}                                                                                                
+                                                                                                 
+void Dot::setPosX( int x )                                                                       
+{                                                                                                
+    mPosX = x;                                                                                   
+}                                                                                                
+                                                                                                 
+void Dot::setPosY( int y )                                                                       
+{                                                                                                
+    mPosY = y;                                                                                   
+}
+
+int Dot::getVelX()                                                                               
+{                                                                                                
+    return mVelX;                                                                                
+}                                                                                                
+                                                                                                 
+int Dot::getVelY()                                                                               
+{                                                                                                
+    return mVelY;                                                                                
+}                                                                                                
+                                                                                                 
+void Dot::setVelX( int x )                                                                       
+{                                                                                                
+    mVelX = x;                                                                                   
+}                                                                                                
+                                                                                                 
+void Dot::setVelY( int y )                                                                       
+{                                                                                                
+    mVelY = y;                                                                                   
+}
+
+
+
 bool init() {
     // Bandera
     bool success = true;
@@ -485,7 +636,7 @@ bool loadMedia() {
     bool success = true;
     
     // Carga la textura
-    if( !gDotTexture.loadFromFile( "romfs/dot.bmp" ) )
+    if( !gDotTexture.loadFromFile( "romfs/dave_cat.png" ) )
     {
         printf( "Falló la carga de la textura!\n" );
         success = false;
@@ -519,6 +670,22 @@ bool loadMedia() {
         success = false;
     }
     
+    // Carga la textura
+    if( !gFishyTexture.loadFromFile( "romfs/fishy.png" ) )
+    {
+        printf( "Falló la carga de la textura shimmer!\n" );
+        success = false;
+    }
+
+    gSpriteSheetTexture.loadFromFile( "romfs/sheet.png" );
+    gSpriteSheetTexture.setAlpha( 64 );
+    for( int i = 0; i < 97; i++ )
+    {
+        gSpriteClips[ i ].x = i * 160;
+        gSpriteClips[ i ].y = 0;
+        gSpriteClips[ i ].w = 160;
+        gSpriteClips[ i ].h = 160;
+    }
     // Establece la transparencia de la textura
     gBlueTexture.setAlpha( 192 );
     gRedTexture.setAlpha( 192 );
@@ -534,12 +701,18 @@ void close() {
     gBlueTexture.free();
     gGreenTexture.free();
     gShimmerTexture.free();
+    gFishyTexture.free();
+    gSpriteSheetTexture.free();
+    SDL_DestroyTexture( myTexture );
+    myTexture = NULL;
 
     // Destruye la ventana
     SDL_DestroyRenderer( gRenderer );
     SDL_DestroyWindow( gWindow );
     gWindow = NULL;
     gRenderer = NULL;
+    myRenderer = NULL;
+    mySurface = NULL;
 
     // Termina SDL
     IMG_Quit();
@@ -563,6 +736,27 @@ int main( int argc, char* argv[] ) {
     SDL_Event e;
 
     Dot dot;
+    
+    int fishyX = 0;
+    int fishyY = 0;
+    unsigned int Limit = SDL_GetTicks() + 16;
+    
+    myRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED
+            | SDL_RENDERER_PRESENTVSYNC );
+    mySurface = SDL_CreateRGBSurface( 0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
+                                      0,
+                                      0,
+                                      0,
+                                      0 );
+    myTexture = SDL_CreateTexture( gRenderer,
+                                   SDL_PIXELFORMAT_ARGB8888,
+                                   SDL_TEXTUREACCESS_STREAMING,
+                                   SCREEN_WIDTH, SCREEN_HEIGHT );
+    resetStars();
+    double flipFish = 0.0;
+
+
+    int frame = 0;
 
     while( !quit ) {
         while( SDL_PollEvent( &e ) != 0 ) {
@@ -579,22 +773,90 @@ int main( int argc, char* argv[] ) {
                               quit = true;
                               break;
 
+                          case SDLK_w:
+                              for( int i = 0; i < NUM_STARS; ++i )
+                                  stars[ i ].speed += ( stars[ i ].speed ) / 2;
+                              break;
+
+                          case SDLK_e:
+                              for( int i = 0; i < NUM_STARS; ++i )
+                                  stars[ i ].speed -= ( stars[ i ].speed ) / 2;
+
+                          case SDLK_r:
+                              //fishVelRot += 1;
+                              break;
+
+                          case SDLK_t:
+                              //fishVelRot -= 1;
+                              break;
                               }
             }
             
             dot.handleEvent( e );
 
         }
+
+        SDL_RenderClear( gRenderer );
         
+        SDL_Rect* currentClip = &gSpriteClips[ frame / 6 ];
+
+        doStars();
+        SDL_FillRect( mySurface, NULL, 0 );
+        updateStars();
+        SDL_UpdateTexture( myTexture, NULL, mySurface->pixels, mySurface->pitch );
+        SDL_RenderCopy( gRenderer, myTexture, NULL, NULL ); 
+        SDL_Delay( 1 );
+        delay( Limit );
+        Limit = SDL_GetTicks() + 16;
+        
+        gSpriteSheetTexture.render( 0, 0, currentClip, 0, NULL, SDL_FLIP_NONE, 4 );
+
         dot.move();
 
         // Limpia la pantalla
-        SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
-        SDL_RenderClear( gRenderer );
+        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0x00, 0x00, 0xFF );
+        // SDL_RenderClear( gRenderer );
 
         // Renderiza el objeto
         dot.render();
 
+        
+/*        if( dot.getVelX() == 0 && dot.getVelY() == 0 ){
+            fishyX += ( dot.getPosX() - fishyX - 30 )/ 10;
+            fishyY += ( dot.getPosY() - fishyY - rand()%30 ) / 10;
+        } else
+        {
+            fishyX += ( dot.getPosX() - fishyX - 30 ) / 20;
+            fishyY += ( dot.getPosY() - fishyY - 30 ) / 20;
+        } */
+        fishyX += ( dot.getPosX() - fishyX - 30 ) / 15;
+        fishyY += ( dot.getPosY() - fishyY - 30 ) / 15;
+
+
+        if( dot.getPosX() < fishyX - 20 )
+            gFishyTexture.render( fishyX, 
+                                  fishyY, 
+                                  NULL, 
+                                  flipFish + 90.0, 
+                                  NULL, 
+                                  SDL_FLIP_HORIZONTAL,
+                                  1 );
+        else
+            gFishyTexture.render( fishyX, 
+                                  fishyY, 
+                                  NULL, 
+                                  flipFish, 
+                                  NULL, 
+                                  SDL_FLIP_NONE,
+                                  1 );
+
+        flipFish += 4;
+        if( flipFish > 360.0 )
+            flipFish = 360 - flipFish;
+        
+        ++frame;
+        if( frame / 6 >= 97 )
+            frame = 0;
         // Actualiza la pantalla
         SDL_RenderPresent( gRenderer );
     }
